@@ -29,10 +29,12 @@
 </div>
 <div id="grid"></div>
 <script type="module">
-  import { avatar, follow } from './index.js';
+  import { avatar, follow } from './dist/index.js';
   const grid = document.getElementById('grid');
   // together these show every color, hair, brow, eye, nose, mouth and cheek option at least once
-  const SEEDS = ['user0', 'user7', 'user37', 'user2', 'user4', 'user76', 'user3', 'user6', 'user10', 'user11', 'user17', 'user24'];
+  const SEEDS = ['Ava', 'Liam', 'Noah', 'Mia', 'Aiko', 'Mateo', 'Zara', 'Kofi', 'Elena', 'Ravi',
+    'Sofia', 'Yuki', 'Omar', 'Ingrid', 'Diego', 'Priya', 'Lucas', 'Amara', 'Chen', 'Freya',
+    'Hugo', 'Leila', 'Tomas', 'Nia', 'Sven', 'Isabella', 'Kenji', 'Fatima', 'Oscar', 'Luna'];
   const render = () => {
     const c = document.querySelector('[name=shape]:checked').value;
     grid.className = c;

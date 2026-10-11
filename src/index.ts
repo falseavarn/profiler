@@ -1,5 +1,5 @@
 // Seeded placeholder avatars as plain SVG strings. All shapes live in a 100x100 viewBox.
-const p = d => `<path d="${d}"/>`;
+const p = (d: string) => `<path d="${d}"/>`;
 
 // all keep >= 5:1 contrast with the #1f3a4d line color
 const BG = ['#b0bec5', '#ffd966', '#ff8a5c', '#00e0a4', '#94a3ff', '#7fd8ff',
@@ -45,19 +45,27 @@ const CSS = '<style>@media (prefers-reduced-motion:no-preference){' +
   '.pf-s .pf-swirl{transform-box:fill-box;transform-origin:center;animation:pf-spin 3s linear infinite}' +
   '@keyframes pf-spin{to{transform:rotate(1turn)}}}</style>';
 
-// shape: 'circle' (default) or 'square'; square's oversized rect fills any container aspect, face stays centered.
-// blink / spin (swirl eyes only) are CSS animations, off by default.
-export function avatar(seed, shape = 'circle', { blink, spin } = {}) {
+/** 'square' fills any container aspect (oversized background), face stays centered. */
+export type Shape = 'circle' | 'square';
+
+/** CSS animations, off by default. `spin` only affects swirl eyes. */
+export interface Effects {
+  blink?: boolean;
+  spin?: boolean;
+}
+
+/** Same seed, same face. Returns SVG markup; the seed is hashed, never echoed into it. */
+export function avatar(seed: string | number, shape: Shape = 'circle', { blink, spin }: Effects = {}): string {
   // FNV-1a hash -> mulberry32 PRNG
   let h = 2166136261;
-  for (const c of String(seed)) h = Math.imul(h ^ c.codePointAt(0), 16777619);
+  for (const c of String(seed)) h = Math.imul(h ^ c.codePointAt(0)!, 16777619);
   const rand = () => {
     h = (h + 0x6d2b79f5) | 0;
     let t = Math.imul(h ^ (h >>> 15), 1 | h);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-  const pick = a => a[(rand() * a.length) | 0];
+  const pick = (a: string[]) => a[(rand() * a.length) | 0];
   const [bg, hair, brows, eyes, nose, mouth, cheeks] = [BG, HAIR, BROWS, EYES, NOSE, MOUTH, CHEEKS].map(pick);
   const fx = (blink ? ' pf-b' : '') + (spin ? ' pf-s' : '');
   // negative delay so blinking avatars don't blink in sync
@@ -65,19 +73,19 @@ export function avatar(seed, shape = 'circle', { blink, spin } = {}) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"${fx ? ` class="${fx.trim()}">${CSS}` : '>'}${shape == 'square' ? '<rect x="-950" y="-950" width="2000" height="2000"' : '<circle cx="50" cy="50" r="50"'} fill="${bg}"/><g fill="none" stroke="#1f3a4d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${hair}${brows}<g class="pf-look"><g class="pf-blink"${delay}>${eyes}</g></g>${nose}${mouth}${cheeks}</g></svg>`;
 }
 
-// Eyes of inline-SVG avatars under root follow the pointer. Returns a stop function.
-export function follow(root = document) {
+/** Eyes of inline-SVG avatars under root follow the pointer. Returns a stop function. */
+export function follow(root: ParentNode = document): () => void {
   let raf = 0, x = 0, y = 0;
   const update = () => {
     raf = 0;
-    for (const g of root.querySelectorAll('.pf-look')) {
-      const r = g.ownerSVGElement.getBoundingClientRect();
+    for (const g of root.querySelectorAll<SVGGElement>('.pf-look')) {
+      const r = g.ownerSVGElement!.getBoundingClientRect();
       const dx = x - r.left - r.width / 2, dy = y - r.top - r.height / 2;
       const k = Math.min(1.5, Math.hypot(dx, dy) / 100) / (Math.hypot(dx, dy) || 1); // max 1.5 units
       g.setAttribute('transform', `translate(${(dx * k).toFixed(2)} ${(dy * k).toFixed(2)})`);
     }
   };
-  const move = e => { x = e.clientX; y = e.clientY; raf ||= requestAnimationFrame(update); };
+  const move = (e: PointerEvent) => { x = e.clientX; y = e.clientY; raf ||= requestAnimationFrame(update); };
   addEventListener('pointermove', move);
   return () => {
     removeEventListener('pointermove', move);

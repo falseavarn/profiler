@@ -3,10 +3,71 @@
   "version": "0.1.0",
   "description": "Seeded placeholder profile avatars as plain SVG, generated client-side",
   "type": "module",
-  "exports": "./index.js",
-  "files": ["index.js"],
-  "scripts": {
-    "test": "node test.js"
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react.d.ts",
+      "import": "./dist/react.js"
+    },
+    "./vue": {
+      "types": "./dist/vue.d.ts",
+      "import": "./dist/vue.js"
+    },
+    "./angular": {
+      "types": "./dist/angular.d.ts",
+      "import": "./dist/angular.js"
+    }
   },
-  "license": "MIT"
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "ngc -p tsconfig.json && esbuild src/index.ts src/react.ts src/vue.ts --minify --target=es2020 --format=esm --outdir=dist",
+    "prepare": "npm run build",
+    "test": "npm run build && node test.js"
+  },
+  "peerDependencies": {
+    "@angular/core": ">=16.1",
+    "@angular/common": ">=16.1",
+    "@angular/platform-browser": ">=16.1",
+    "react": ">=16.8",
+    "vue": ">=3.2"
+  },
+  "peerDependenciesMeta": {
+    "@angular/core": {
+      "optional": true
+    },
+    "@angular/common": {
+      "optional": true
+    },
+    "@angular/platform-browser": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    }
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@angular/common": "^22.2.2",
+    "@angular/compiler": "^22.2.2",
+    "@angular/compiler-cli": "^22.2.2",
+    "@angular/core": "^22.2.2",
+    "@angular/platform-browser": "^22.2.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "esbuild": "^0.28.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "rxjs": "^7.8.2",
+    "typescript": "^6.0.3",
+    "vue": "^3.5.43"
+  }
 }
