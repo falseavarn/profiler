@@ -1,0 +1,48 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>profiler demo</title>
+<style>
+  body { font-family: sans-serif; padding: 24px; --size: 96px; }
+  #controls { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; margin-bottom: 24px; }
+  #grid { display: flex; flex-wrap: wrap; gap: 24px; }
+  figure { margin: 0; text-align: center; font-size: 12px; }
+  .box { width: var(--size); height: var(--size); overflow: hidden; }
+  .box svg { width: 100%; height: 100%; display: block; }
+  .rounded .box { border-radius: 20%; }
+  .wide .box { width: calc(var(--size) * 2); }
+</style>
+<div id="controls">
+  <label>Size <input id="size" type="range" min="32" max="256" value="96"> <output id="sizeOut">96px</output></label>
+  <fieldset>
+    <legend>Container</legend>
+    <label><input type="radio" name="shape" value="circle" checked> Circle</label>
+    <label><input type="radio" name="shape" value="square"> Square</label>
+    <label><input type="radio" name="shape" value="rounded"> Rounded</label>
+    <label><input type="radio" name="shape" value="wide"> Wide (fill)</label>
+  </fieldset>
+  <fieldset>
+    <legend>Effects</legend>
+    <label><input type="checkbox" id="blink"> Blink</label>
+    <label><input type="checkbox" id="spin"> Spin swirl eyes</label>
+    <label><input type="checkbox" id="follow"> Eyes follow mouse</label>
+  </fieldset>
+</div>
+<div id="grid"></div>
+<script type="module">
+  import { avatar, follow } from './index.js';
+  const grid = document.getElementById('grid');
+  const render = () => {
+    const c = document.querySelector('[name=shape]:checked').value;
+    grid.className = c;
+    grid.innerHTML = Array.from({ length: 24 }, (_, i) =>
+      `<figure><div class="box">${avatar('user' + i, c == 'circle' ? 'circle' : 'square', { blink: blink.checked, spin: spin.checked })}</div><figcaption>user${i}</figcaption></figure>`).join('');
+  };
+  document.getElementById('size').oninput = e => {
+    document.body.style.setProperty('--size', e.target.value + 'px');
+    document.getElementById('sizeOut').value = e.target.value + 'px';
+  };
+  document.querySelectorAll('[name=shape], #blink, #spin').forEach(r => (r.onchange = render));
+  let stop;
+  document.getElementById('follow').onchange = e => e.target.checked ? (stop = follow(grid)) : stop();
+  render();
+</script>
