@@ -12,7 +12,9 @@
       "src/index.ts",
       "src/react.ts",
       "src/vue.ts",
-      "jsr.json"
+      "jsr.json",
+      "README.md",
+      "assets/avatars.svg"
     ]
   }
 }
