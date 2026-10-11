@@ -1,7 +1,9 @@
 // Seeded placeholder avatars as plain SVG strings. All shapes live in a 100x100 viewBox.
 const p = d => `<path d="${d}"/>`;
 
-const BG = ['#b0bec5', '#ffd966', '#ff8a5c', '#00e0a4', '#94a3ff', '#7fd8ff'];
+// all keep >= 5:1 contrast with the #1f3a4d line color
+const BG = ['#b0bec5', '#ffd966', '#ff8a5c', '#00e0a4', '#94a3ff', '#7fd8ff',
+  '#ff9ec4', '#c9a3ff', '#ffc09f', '#c5e86c', '#5fd3c6', '#e8d5b0'];
 const HAIR = [
   p('M30 10v14M40 7v16M50 6v17M60 7v16M70 10v14'),       // crew-cut strokes
   p('M19 22q4.5-5 9 0t9 0t9 0t9 0t9 0t9 0t9 0'),          // scallop

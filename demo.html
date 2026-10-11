@@ -31,11 +31,13 @@
 <script type="module">
   import { avatar, follow } from './index.js';
   const grid = document.getElementById('grid');
+  // together these show every color, hair, brow, eye, nose, mouth and cheek option at least once
+  const SEEDS = ['user0', 'user7', 'user37', 'user2', 'user4', 'user76', 'user3', 'user6', 'user10', 'user11', 'user17', 'user24'];
   const render = () => {
     const c = document.querySelector('[name=shape]:checked').value;
     grid.className = c;
-    grid.innerHTML = Array.from({ length: 24 }, (_, i) =>
-      `<figure><div class="box">${avatar('user' + i, c == 'circle' ? 'circle' : 'square', { blink: blink.checked, spin: spin.checked })}</div><figcaption>user${i}</figcaption></figure>`).join('');
+    grid.innerHTML = SEEDS.map(s =>
+      `<figure><div class="box">${avatar(s, c == 'circle' ? 'circle' : 'square', { blink: blink.checked, spin: spin.checked })}</div><figcaption>${s}</figcaption></figure>`).join('');
   };
   document.getElementById('size').oninput = e => {
     document.body.style.setProperty('--size', e.target.value + 'px');
