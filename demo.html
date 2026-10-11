@@ -1,52 +1,273 @@
 <!doctype html>
+<html lang="en">
 <meta charset="utf-8">
-<title>profiler demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profiler — seeded SVG avatars</title>
 <style>
-  body { font-family: sans-serif; padding: 24px; --size: 96px; }
-  #controls { display: flex; flex-wrap: wrap; gap: 24px; align-items: center; margin-bottom: 24px; }
-  #grid { display: flex; flex-wrap: wrap; gap: 24px; }
-  figure { margin: 0; text-align: center; font-size: 12px; }
+  :root {
+    --bg: #fafafa; --panel: #ffffff; --raised: #f4f4f5; --border: #e4e4e7;
+    --text: #09090b; --muted: #71717a; --accent: #18181b; --on-accent: #fafafa;
+    --ring: #a1a1aa; --dot: #e4e4e7;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+    --size: 96px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #09090b; --panel: #0f0f12; --raised: #18181b; --border: #27272a;
+      --text: #fafafa; --muted: #a1a1aa; --accent: #fafafa; --on-accent: #09090b;
+      --ring: #52525b; --dot: #1c1c20;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #09090b; --panel: #0f0f12; --raised: #18181b; --border: #27272a;
+    --text: #fafafa; --muted: #a1a1aa; --accent: #fafafa; --on-accent: #09090b;
+    --ring: #52525b; --dot: #1c1c20;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  .tag { font: 11px/1 var(--mono); color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; background: var(--raised); white-space: nowrap; }
+
+  /* top bar */
+  .bar {
+    position: sticky; top: 0; z-index: 10; height: 56px; padding: 0 16px;
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--bg) 72%, transparent);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  }
+  .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .brand .mark { width: 28px; height: 28px; flex: none; border-radius: 8px; overflow: hidden; }
+  .brand .mark svg { width: 100%; height: 100%; display: block; }
+  .brand h1 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+  .brand p { margin: 0; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar .spacer { flex: 1; }
+  .icon-btn {
+    width: 32px; height: 32px; display: grid; place-items: center; flex: none;
+    border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--text); cursor: pointer;
+  }
+  .icon-btn:hover { background: var(--raised); }
+  .icon-btn svg { width: 16px; height: 16px; }
+
+  /* workspace */
+  .shell { display: grid; grid-template-columns: 272px 1fr; min-height: calc(100vh - 56px); }
+  .panel { border-right: 1px solid var(--border); background: var(--panel); padding: 8px 0; }
+  .panel-inner { position: sticky; top: 64px; }
+  .section { padding: 12px 16px 16px; border-bottom: 1px solid var(--border); }
+  .section:last-child { border-bottom: 0; }
+  .section-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .eyebrow { font: 500 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0; }
+
+  /* range */
+  input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; }
+
+  /* segmented control */
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px; border: 1px solid var(--border); border-radius: 8px; background: var(--raised); }
+  .seg label { position: relative; }
+  .seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .seg span { display: block; text-align: center; padding: 6px 8px; border-radius: 6px; font-size: 13px; color: var(--muted); }
+  .seg input:checked + span { background: var(--panel); color: var(--text); box-shadow: 0 0 0 1px var(--border), 0 1px 2px rgb(0 0 0 / .15); }
+  .seg input:focus-visible + span { outline: 2px solid var(--ring); outline-offset: 1px; }
+
+  /* switches */
+  .switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 0; cursor: pointer; }
+  .switch small { display: block; color: var(--muted); font-size: 12px; }
+  .switch input {
+    appearance: none; -webkit-appearance: none; flex: none; margin: 0; cursor: pointer;
+    width: 32px; height: 18px; border-radius: 999px; background: var(--border); position: relative; transition: background .15s;
+  }
+  .switch input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--panel); transition: transform .15s; box-shadow: 0 1px 2px rgb(0 0 0 / .3); }
+  .switch input:checked { background: var(--accent); }
+  .switch input:checked::after { transform: translateX(14px); background: var(--on-accent); }
+
+  .tabs { display: flex; gap: 2px; padding: 2px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--raised); }
+  .tabs button { flex: auto; border: 0; border-radius: 6px; padding: 5px 4px; background: none; color: var(--muted); font: 11px/1 var(--mono); cursor: pointer; }
+  .tabs button:hover { color: var(--text); }
+  .tabs button[aria-pressed="true"] { background: var(--panel); color: var(--text); box-shadow: 0 0 0 1px var(--border), 0 1px 2px rgb(0 0 0 / .15); }
+  .snippet { margin: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--raised); font: 12px/1.6 var(--mono); color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .copy { font: 11px/1 var(--mono); color: var(--muted); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; background: var(--panel); cursor: pointer; }
+  .copy:hover { color: var(--text); background: var(--raised); }
+
+  /* canvas */
+  .canvas {
+    padding: 20px 24px 40px; min-width: 0;
+    background-image: radial-gradient(var(--dot) 1px, transparent 1px); background-size: 16px 16px;
+  }
+  .canvas-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 16px; }
+  .canvas-head h2 { margin: 0 4px 0 0; font-size: 14px; font-weight: 600; }
+  #grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(calc(var(--size) + 34px), 1fr)); }
+  #grid.wide { grid-template-columns: repeat(auto-fill, minmax(calc(var(--size) * 2 + 34px), 1fr)); }
+  figure {
+    margin: 0; padding: 16px 16px 12px; display: flex; flex-direction: column; align-items: center; gap: 12px;
+    border: 1px solid var(--border); border-radius: 12px; background: color-mix(in srgb, var(--panel) 85%, transparent);
+    transition: border-color .15s, transform .15s;
+  }
+  figure:hover { border-color: var(--ring); }
+  figcaption { font: 12px/1 var(--mono); color: var(--muted); }
   .box { width: var(--size); height: var(--size); overflow: hidden; }
   .box svg { width: 100%; height: 100%; display: block; }
-  .rounded .box { border-radius: 20%; }
-  .wide .box { width: calc(var(--size) * 2); }
+  .rounded .box { border-radius: 22%; }
+  .wide .box { width: calc(var(--size) * 2); border-radius: 12px; }
+
+  @media (max-width: 760px) {
+    .shell { grid-template-columns: 1fr; }
+    .panel { border-right: 0; border-bottom: 1px solid var(--border); }
+    .panel-inner { position: static; }
+    .canvas { padding: 16px; }
+    .brand p { display: none; }
+  }
 </style>
-<div id="controls">
-  <label>Size <input id="size" type="range" min="32" max="256" value="96"> <output id="sizeOut">96px</output></label>
-  <fieldset>
-    <legend>Container</legend>
-    <label><input type="radio" name="shape" value="circle" checked> Circle</label>
-    <label><input type="radio" name="shape" value="square"> Square</label>
-    <label><input type="radio" name="shape" value="rounded"> Rounded</label>
-    <label><input type="radio" name="shape" value="wide"> Wide (fill)</label>
-  </fieldset>
-  <fieldset>
-    <legend>Effects</legend>
-    <label><input type="checkbox" id="blink"> Blink</label>
-    <label><input type="checkbox" id="spin"> Spin swirl eyes</label>
-    <label><input type="checkbox" id="follow"> Eyes follow mouse</label>
-  </fieldset>
+
+<header class="bar">
+  <div class="brand">
+    <div class="mark" id="mark"></div>
+    <h1>Profiler</h1>
+    <p>Seeded SVG avatars, generated client-side</p>
+  </div>
+  <div class="spacer"></div>
+  <span class="tag">20,736 faces</span>
+  <button class="icon-btn" id="theme" type="button" aria-label="Toggle color theme">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+  </button>
+</header>
+
+<div class="shell">
+  <aside class="panel" aria-label="Settings">
+    <div class="panel-inner">
+      <div class="section">
+        <div class="section-head">
+          <label class="eyebrow" for="size">Size</label>
+          <output class="tag" id="sizeOut" for="size">96px</output>
+        </div>
+        <input id="size" type="range" min="32" max="256" value="96">
+      </div>
+
+      <div class="section" role="radiogroup" aria-labelledby="shape-label">
+        <div class="section-head"><p class="eyebrow" id="shape-label">Container</p></div>
+        <div class="seg">
+          <label><input type="radio" name="shape" value="circle" checked><span>Circle</span></label>
+          <label><input type="radio" name="shape" value="square"><span>Square</span></label>
+          <label><input type="radio" name="shape" value="rounded"><span>Rounded</span></label>
+          <label><input type="radio" name="shape" value="wide"><span>Wide</span></label>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head"><p class="eyebrow">Effects</p></div>
+        <label class="switch"><span>Blink<small>CSS animation</small></span><input type="checkbox" id="blink"></label>
+        <label class="switch"><span>Spin swirl eyes<small>CSS animation</small></span><input type="checkbox" id="spin"></label>
+        <label class="switch"><span>Eyes follow pointer<small>JS, inline SVG only</small></span><input type="checkbox" id="follow"></label>
+      </div>
+
+      <div class="section">
+        <div class="section-head">
+          <p class="eyebrow">Usage</p>
+          <button class="copy" id="copy" type="button" aria-live="polite">Copy</button>
+        </div>
+        <div class="tabs" id="tabs" role="group" aria-label="Framework">
+          <button type="button" aria-pressed="true">JS</button>
+          <button type="button" aria-pressed="false">React</button>
+          <button type="button" aria-pressed="false">Vue</button>
+          <button type="button" aria-pressed="false">Angular</button>
+          <button type="button" aria-pressed="false">Svelte</button>
+        </div>
+        <pre class="snippet" id="snippet"></pre>
+      </div>
+    </div>
+  </aside>
+
+  <main class="canvas">
+    <div class="canvas-head">
+      <h2>Samples</h2>
+      <span class="tag">30 seeds</span>
+      <span class="tag">every feature covered</span>
+    </div>
+    <div id="grid"></div>
+  </main>
 </div>
-<div id="grid"></div>
+
 <script type="module">
   import { avatar, follow } from './dist/index.js';
-  const grid = document.getElementById('grid');
+  const $ = id => document.getElementById(id);
+  const grid = $('grid');
   // together these show every color, hair, brow, eye, nose, mouth and cheek option at least once
   const SEEDS = ['Ava', 'Liam', 'Noah', 'Mia', 'Aiko', 'Mateo', 'Zara', 'Kofi', 'Elena', 'Ravi',
     'Sofia', 'Yuki', 'Omar', 'Ingrid', 'Diego', 'Priya', 'Lucas', 'Amara', 'Chen', 'Freya',
     'Hugo', 'Leila', 'Tomas', 'Nia', 'Sven', 'Isabella', 'Kenji', 'Fatima', 'Oscar', 'Luna'];
+
   const render = () => {
     const c = document.querySelector('[name=shape]:checked').value;
+    const shape = c == 'circle' ? 'circle' : 'square';
+    const fx = { blink: $('blink').checked, spin: $('spin').checked };
     grid.className = c;
-    grid.innerHTML = SEEDS.map(s =>
-      `<figure><div class="box">${avatar(s, c == 'circle' ? 'circle' : 'square', { blink: blink.checked, spin: spin.checked })}</div><figcaption>${s}</figcaption></figure>`).join('');
+    grid.innerHTML = SEEDS.map(s => `<figure><div class="box">${avatar(s, shape, fx)}</div><figcaption>${s}</figcaption></figure>`).join('');
+    renderUsage();
   };
-  document.getElementById('size').oninput = e => {
-    document.body.style.setProperty('--size', e.target.value + 'px');
-    document.getElementById('sizeOut').value = e.target.value + 'px';
+
+  // usage snippets mirror the current settings
+  const snippet = (tab, shape, fx, f) => {
+    const opts = Object.keys(fx).filter(k => fx[k]).map(k => `${k}: true`).join(', ');
+    const call = `avatar('Ava'${shape == 'square' || opts ? `, '${shape}'` : ''}${opts ? `, { ${opts} }` : ''})`;
+    const attrs = ['seed="Ava"', shape == 'square' && 'shape="square"', fx.blink && 'blink', fx.spin && 'spin', f && 'follow'].filter(Boolean).join(' ');
+    const core = `import { avatar${f ? ', follow' : ''} } from 'profiler';`;
+    return {
+      JS: `${core}\n\nel.innerHTML = ${call};${f ? '\nconst stop = follow(el);' : ''}`,
+      React: `import { Avatar } from 'profiler/react';\n\n<Avatar ${attrs} />`,
+      Vue: `<script setup>\nimport { Avatar } from 'profiler/vue';\n<\/script>\n\n<template>\n  <Avatar ${attrs} />\n</template>`,
+      Angular: `import { AvatarComponent } from 'profiler/angular';\n\n@Component({\n  imports: [AvatarComponent],\n  template: \`<profiler-avatar ${attrs} />\`,\n})`,
+      Svelte: `<script>\n  ${core}\n<\/script>\n\n<div${f ? ' {@attach follow}' : ''}>{@html ${call}}</div>`,
+    }[tab];
+  };
+  let tab = 'JS';
+  const renderUsage = () => {
+    const c = document.querySelector('[name=shape]:checked').value;
+    $('snippet').textContent = snippet(tab, c == 'circle' ? 'circle' : 'square',
+      { blink: $('blink').checked, spin: $('spin').checked }, $('follow').checked);
+  };
+  $('tabs').onclick = e => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    tab = b.textContent;
+    for (const t of $('tabs').children) t.setAttribute('aria-pressed', t == b);
+    renderUsage();
+  };
+  let copied;
+  $('copy').onclick = async () => {
+    try {
+      await navigator.clipboard.writeText($('snippet').textContent);
+      $('copy').textContent = 'Copied';
+    } catch {
+      // clipboard API needs a secure context; select the code so Ctrl/Cmd+C works
+      getSelection().selectAllChildren($('snippet'));
+      $('copy').textContent = 'Press Ctrl+C';
+    }
+    clearTimeout(copied);
+    copied = setTimeout(() => ($('copy').textContent = 'Copy'), 1500);
+  };
+
+  $('size').oninput = e => {
+    document.documentElement.style.setProperty('--size', e.target.value + 'px');
+    $('sizeOut').value = e.target.value + 'px';
   };
   document.querySelectorAll('[name=shape], #blink, #spin').forEach(r => (r.onchange = render));
   let stop;
-  document.getElementById('follow').onchange = e => e.target.checked ? (stop = follow(grid)) : stop();
+  $('follow').onchange = e => { e.target.checked ? (stop = follow(grid)) : stop(); renderUsage(); };
+
+  // theme: system by default, toggle overrides and is remembered per browser
+  const root = document.documentElement;
+  try { const t = localStorage.getItem('profiler-theme'); if (t) root.dataset.theme = t; } catch {}
+  $('theme').onclick = () => {
+    const dark = root.dataset.theme ? root.dataset.theme == 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+    try { localStorage.setItem('profiler-theme', root.dataset.theme); } catch {}
+  };
+
+  $('mark').innerHTML = avatar('profiler', 'square');
   render();
 </script>
+</html>
