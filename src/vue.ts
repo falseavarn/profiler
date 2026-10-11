@@ -1,7 +1,15 @@
-import { defineComponent, h, ref, watchPostEffect, type PropType } from 'vue';
-import { avatar, follow, type Shape } from './index.js';
+import { defineComponent, h, ref, watchPostEffect, type DefineComponent, type PropType } from 'vue';
+import { avatar, follow, type Effects, type Shape } from './index.js';
 
-export const Avatar = defineComponent({
+export interface AvatarProps extends Effects {
+  seed: string | number;
+  shape?: Shape;
+  /** Eyes follow the pointer. */
+  follow?: boolean;
+}
+
+// explicit type: JSR rejects inferred types in the public API
+export const Avatar: DefineComponent<AvatarProps> = defineComponent({
   name: 'Avatar',
   props: {
     seed: { type: [String, Number], required: true },

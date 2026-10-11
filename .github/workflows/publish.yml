@@ -1,0 +1,29 @@
+name: Publish to JSR
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC auth with JSR; no token secret needed
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Set version from tag
+        run: |
+          node -e "
+            const fs = require('fs'), v = process.env.GITHUB_REF_NAME.replace(/^v/, '');
+            if (!/^\d+\.\d+\.\d+(-[\w.]+)?$/.test(v)) throw new Error('tag must be vX.Y.Z, got ' + process.env.GITHUB_REF_NAME);
+            const j = JSON.parse(fs.readFileSync('jsr.json', 'utf8'));
+            fs.writeFileSync('jsr.json', JSON.stringify({ ...j, version: v }, null, 2) + '\n');
+          "
+      - run: npx jsr publish --allow-dirty # dirty only because of the version rewrite above
