@@ -18,8 +18,8 @@ const BROWS = [
 ];
 const EYES = [
   '<circle cx="36" cy="48" r="4.5"/><circle cx="64" cy="48" r="4.5"/>',
-  // swirl; split into two paths so each can spin around its own center
-  '<path class="pf-swirl" d="M32 48a4 4 0 1 1 4 4a2.5 2.5 0 0 1-2.5-2.5"/><path class="pf-swirl" d="M68 48a4 4 0 1 0-4 4a2.5 2.5 0 0 0 2.5-2.5"/>',
+  // inward spiral of shrinking half-arcs; one path per eye so each spins around its own center
+  '<path class="pf-swirl" d="M42 48a6 6 0 0 0-12 0a4 4 0 0 0 8 0a2 2 0 0 0-4 0"/><path class="pf-swirl" d="M58 48a6 6 0 0 1 12 0a4 4 0 0 1-8 0a2 2 0 0 1 4 0"/>',
 ];
 const NOSE = [
   p('M46 56q4 3 8 0'),
