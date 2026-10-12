@@ -50,7 +50,9 @@ export type Shape = 'circle' | 'square';
 
 /** CSS animations, off by default. `spin` only affects swirl eyes. */
 export interface Effects {
+  /** Eyes blink every few seconds, out of sync between avatars. */
   blink?: boolean;
+  /** Swirl eyes rotate. */
   spin?: boolean;
 }
 
